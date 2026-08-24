@@ -1,4 +1,5 @@
 import { icons } from "@/constants/icons";
+import { posthog } from "@/lib/posthog";
 import clsx from "clsx";
 import dayjs from "dayjs";
 import { useState } from "react";
@@ -56,7 +57,8 @@ const CreateSubscriptionModal = ({
   const [error, setError] = useState("");
 
   const numericPrice = Number(price.replace(",", "."));
-  const isFormValid = Boolean(name.trim()) && Number.isFinite(numericPrice) && numericPrice > 0;
+  const isFormValid =
+    Boolean(name.trim()) && Number.isFinite(numericPrice) && numericPrice > 0;
 
   const resetForm = () => {
     setName("");
@@ -105,6 +107,12 @@ const CreateSubscriptionModal = ({
       currency: "USD",
     });
 
+    posthog.capture("subscription_created", {
+      subscription_name: trimmedName,
+      subscription_price: numericPrice,
+      subscription_frequency: frequency,
+      subscription_category: category,
+    });
     resetForm();
     onClose();
   };
