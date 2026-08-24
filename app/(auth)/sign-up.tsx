@@ -1,6 +1,6 @@
 import { useAuth, useClerk, useSignUp } from "@clerk/expo";
-import { styled } from "nativewind";
 import { Redirect, router } from "expo-router";
+import { styled } from "nativewind";
 import { useState } from "react";
 import {
   ActivityIndicator,
@@ -92,7 +92,8 @@ const SignUp = () => {
         return;
       }
 
-      const { error: sendCodeError } = await signUp.verifications.sendEmailCode();
+      const { error: sendCodeError } =
+        await signUp.verifications.sendEmailCode();
 
       if (sendCodeError) {
         setError(sendCodeError.message || "Unable to send verification code.");
@@ -102,7 +103,9 @@ const SignUp = () => {
       setStep("verify");
     } catch (createError: unknown) {
       const message =
-        createError instanceof Error ? createError.message : "Unable to create account.";
+        createError instanceof Error
+          ? createError.message
+          : "Unable to create account.";
       setError(message);
     } finally {
       setIsSubmitting(false);
@@ -112,7 +115,7 @@ const SignUp = () => {
   const handleVerify = async () => {
     setError("");
 
-    if (!verificationCode.trim() || verificationCode.trim().length < 6) {
+    if (verificationCode.trim().length !== 6) {
       setError("Enter the 6-digit verification code sent to your email.");
       return;
     }
@@ -124,18 +127,24 @@ const SignUp = () => {
 
     try {
       setIsSubmitting(true);
-      const { error: verifyError } = await signUp.verifications.verifyEmailCode({
-        code: verificationCode.trim(),
-      });
+      const { error: verifyError } = await signUp.verifications.verifyEmailCode(
+        {
+          code: verificationCode.trim(),
+        },
+      );
 
       if (verifyError) {
-        setError(verifyError.message || "The code doesn’t match. Please try again.");
+        setError(
+          verifyError.message || "The code doesn’t match. Please try again.",
+        );
         return;
       }
 
       const { error: finalizeError } = await signUp.finalize();
       if (finalizeError) {
-        setError(finalizeError.message || "Unable to finish creating your account.");
+        setError(
+          finalizeError.message || "Unable to finish creating your account.",
+        );
         return;
       }
 
@@ -147,7 +156,10 @@ const SignUp = () => {
 
       setError("The code doesn’t match. Please try again.");
     } catch (verifyError: unknown) {
-      const message = verifyError instanceof Error ? verifyError.message : "Unable to verify code.";
+      const message =
+        verifyError instanceof Error
+          ? verifyError.message
+          : "Unable to verify code.";
       setError(message);
     } finally {
       setIsSubmitting(false);
@@ -300,7 +312,9 @@ const SignUp = () => {
                   }}
                   className="auth-secondary-button"
                 >
-                  <Text className="auth-secondary-button-text">Use a different email</Text>
+                  <Text className="auth-secondary-button-text">
+                    Use a different email
+                  </Text>
                 </TouchableOpacity>
               </View>
             )}

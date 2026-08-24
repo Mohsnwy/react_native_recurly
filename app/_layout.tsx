@@ -1,20 +1,50 @@
 "use client";
 import "@/global.css";
-import { ClerkProvider } from "@clerk/expo";
+import { ClerkProvider, useUser } from "@clerk/expo";
 import { tokenCache } from "@clerk/expo/token-cache";
 import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
-import { useEffect } from "react";
+import { PostHogErrorBoundary, PostHogProvider } from "posthog-react-native";
+import { useEffect, useRef } from "react";
+
+import { posthog } from "@/lib/posthog";
 
 SplashScreen.preventAutoHideAsync();
 
 const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY || "";
 
+function PostHogIdentity() {
+  const { user, isLoaded } = useUser();
+  const identifiedUserId = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!isLoaded) {
+      return;
+    }
+
+    if (!user) {
+      identifiedUserId.current = null;
+      return;
+    }
+
+    if (identifiedUserId.current === user.id) {
+      return;
+    }
+
+    posthog.identify(user.id, {
+      email: user.primaryEmailAddress?.emailAddress ?? null,
+      name: user.fullName,
+      first_name: user.firstName,
+      last_name: user.lastName,
+    });
+    identifiedUserId.current = user.id;
+  }, [isLoaded, user]);
+
+  return null;
+}
+
 export default function RootLayout() {
-  if (!publishableKey) {
-    return null;
-  }
   const [fontsLoaded] = useFonts({
     "sans-regular": require("../assets/fonts/PlusJakartaSans-Regular.ttf"),
     "sans-semibold": require("../assets/fonts/PlusJakartaSans-SemiBold.ttf"),
@@ -30,11 +60,16 @@ export default function RootLayout() {
     }
   }, [fontsLoaded]);
 
-  if (!fontsLoaded) return null;
+  if (!publishableKey || !fontsLoaded) return null;
 
   return (
     <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
-      <Stack screenOptions={{ headerShown: false }} />
+      <PostHogProvider client={posthog}>
+        <PostHogIdentity />
+        <PostHogErrorBoundary>
+          <Stack screenOptions={{ headerShown: false }} />
+        </PostHogErrorBoundary>
+      </PostHogProvider>
     </ClerkProvider>
   );
 }
